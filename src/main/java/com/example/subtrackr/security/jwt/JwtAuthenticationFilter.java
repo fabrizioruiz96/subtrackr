@@ -12,13 +12,14 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.example.subtrackr.service.UserDetailsServiceImpl;
 
-import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -37,23 +38,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
         final String username;
-
+        
+        // Logga l'header Auth ad ogni richiesta
+        log.debug("[JWT Filter] Authorization header: {}", authHeader);
+            
         // Controlla che esista e che inizi con "Bearer"
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
+
         jwt = authHeader.substring(7);
-
         // Estrai l'username dal token (cattura eccezione se scaduto)
-        try {
-            username = jwtService.extractUsername(jwt);
-        } catch (ExpiredJwtException e) {
-            // token scaduto: andiamo avanti senza autenticare
-            filterChain.doFilter(request, response);
-            return;
-        }
-
+        username = jwtService.extractUsername(jwt);
+        log.debug("[JWT Filter] Extracted userEmail: {}", username);
+       
         // Se non è già stato autenticato in questo contesto
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             // Carica dettagli utente dal db
@@ -72,6 +71,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     new WebAuthenticationDetailsSource().buildDetails(request)
                 );
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+                log.debug("[JWT Filter] Authentication set for user: {}", username);
+            } else {
+                log.debug("[JWT Filter] Token non valido");
             }
         }
 
