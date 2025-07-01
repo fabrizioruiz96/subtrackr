@@ -21,6 +21,18 @@ public class PlanService {
 
     private final PlanRepository planRepo;
 
+    // Helper per mappare da entity -> DTO
+    private PlanResponse toResponse(Plan plan) {
+        return PlanResponse.builder()
+            .id(plan.getId())
+            .name(plan.getName())
+            .description(plan.getDescription())
+            .price(plan.getPrice())
+            .durationDays(plan.getDurationDays())
+            .createdAt(plan.getCreatedAt())
+            .build();
+    }
+
     // Recupera tutti i piani dell'utente
     public List<PlanResponse> getAllForUser(User user) {
         return planRepo.findByUser(user)
@@ -75,15 +87,4 @@ public class PlanService {
         planRepo.delete(plan);
     }
 
-    // Helper per mappare da entity -> DTO
-    private PlanResponse toResponse(Plan plan) {
-        return PlanResponse.builder()
-            .id(plan.getId())
-            .name(plan.getName())
-            .description(plan.getDescription())
-            .price(plan.getPrice())
-            .durationDays(plan.getDurationDays())
-            .createdAt(plan.getCreatedAt())
-            .build();
-    }
 }
